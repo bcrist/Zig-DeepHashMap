@@ -1,5 +1,11 @@
 .{
     .name = "Zig-DeepHashMap",
     .version = "1.0.0",
+    .minimum_zig_version = "0.12.0-dev.1591+3fc6a2f11",
     .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "deep_hash_map.zig",
+    },
 }
