@@ -142,3 +142,29 @@ pub fn StrategyContext(comptime K: type, comptime strat: std.hash.Strategy) type
         pub const eql = getAutoEqlFn(K, strat, @This());
     };
 }
+
+test {
+    try test_map(ShallowAutoHashMap(i32, i32));
+    try test_map(DeepAutoHashMap(i32, i32));
+    try test_map(DeepRecursiveAutoHashMap(i32, i32));
+
+    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(i32, i32));
+    try test_map_unmanaged(DeepAutoHashMapUnmanaged(i32, i32));
+    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(i32, i32));
+}
+
+fn test_map(comptime T: type) !void {
+    var map = T.init(std.testing.allocator);
+    defer map.deinit();
+
+    try map.put(0, 1);
+    try std.testing.expectEqual(1, map.get(0));
+}
+
+fn test_map_unmanaged(comptime T: type) !void {
+    var map: T = .{};
+    defer map.deinit(std.testing.allocator);
+
+    try map.put(std.testing.allocator, 0, 1);
+    try std.testing.expectEqual(1, map.get(0));
+}
