@@ -48,20 +48,20 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
     const T = @TypeOf(a);
 
     switch (@typeInfo(T)) {
-        .Struct => |info| {
+        .@"struct" => |info| {
             inline for (info.fields) |field_info| {
                 if (!deepEql(@field(a, field_info.name), @field(b, field_info.name), strat)) return false;
             }
             return true;
         },
-        .ErrorUnion => {
+        .error_union => {
             if (a) |a_p| {
                 if (b) |b_p| return deepEql(a_p, b_p, strat) else |_| return false;
             } else |a_e| {
                 if (b) |_| return false else |b_e| return a_e == b_e;
             }
         },
-        .Union => |info| {
+        .@"union" => |info| {
             if (info.tag_type) |UnionTag| {
                 const tag_a = std.meta.activeTag(a);
                 const tag_b = std.meta.activeTag(b);
@@ -77,20 +77,20 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
 
             @compileError("cannot compare untagged union type " ++ @typeName(T));
         },
-        .Array => {
+        .array => {
             if (a.len != b.len) return false;
             for (a, 0..) |e, i|
                 if (!deepEql(e, b[i], strat)) return false;
             return true;
         },
-        .Vector => |info| {
+        .vector => |info| {
             var i: usize = 0;
             while (i < info.len) : (i += 1) {
                 if (!deepEql(a[i], b[i], strat)) return false;
             }
             return true;
         },
-        .Pointer => |info| {
+        .pointer => |info| {
             switch (info.size) {
                 .One => {
                     if (a == b) return true;
@@ -127,7 +127,7 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
                 },
             }
         },
-        .Optional => {
+        .optional => {
             if (a == null and b == null) return true;
             if (a == null or b == null) return false;
             return deepEql(a.?, b.?, strat);
