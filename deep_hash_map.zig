@@ -92,7 +92,7 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
         },
         .pointer => |info| {
             switch (info.size) {
-                .One => {
+                .one => {
                     if (a == b) return true;
                     return switch (strat) {
                         .Shallow => false,
@@ -100,13 +100,13 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
                         .DeepRecursive => deepEql(a.*, b.*, .DeepRecursive),
                     };
                 },
-                .Many, .C => {
+                .many, .c => {
                     if (a == b) return true;
                     if (strat != .Shallow) {
                         @compileError("cannot compare pointer-to-many or C-pointer for deep equality!");
                     }
                 },
-                .Slice => {
+                .slice => {
                     if (a.len != b.len) return false;
                     if (a.ptr == b.ptr) return true;
                     switch (strat) {
