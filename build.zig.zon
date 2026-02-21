@@ -1,12 +1,13 @@
 .{
     .name = .deep_hash_map,
+    .fingerprint = 0xfe570ff6842cb644,
     .version = "1.0.1",
     .minimum_zig_version = "0.15.1",
-    .fingerprint = 0xfe570ff6842cb644,
     .dependencies = .{},
     .paths = .{
         "build.zig",
         "build.zig.zon",
         "deep_hash_map.zig",
+        "license",
     },
 }
