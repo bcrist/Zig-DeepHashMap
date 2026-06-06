@@ -49,8 +49,8 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
 
     switch (@typeInfo(T)) {
         .@"struct" => |info| {
-            inline for (info.fields) |field_info| {
-                if (!deepEql(@field(a, field_info.name), @field(b, field_info.name), strat)) return false;
+            inline for (info.field_names) |field_name| {
+                if (!deepEql(@field(a, field_name), @field(b, field_name), strat)) return false;
             }
             return true;
         },
@@ -67,9 +67,9 @@ pub fn deepEql(a: anytype, b: @TypeOf(a), comptime strat: std.hash.Strategy) boo
                 const tag_b = std.meta.activeTag(b);
                 if (tag_a != tag_b) return false;
 
-                inline for (info.fields) |field_info| {
-                    if (@field(UnionTag, field_info.name) == tag_a) {
-                        return deepEql(@field(a, field_info.name), @field(b, field_info.name), strat);
+                inline for (info.field_names) |field_name| {
+                    if (@field(UnionTag, field_name) == tag_a) {
+                        return deepEql(@field(a, field_name), @field(b, field_name), strat);
                     }
                 }
                 return false;
@@ -144,27 +144,64 @@ pub fn StrategyContext(comptime K: type, comptime strat: std.hash.Strategy) type
 }
 
 test {
-    try test_map(ShallowAutoHashMap(i32, i32));
-    try test_map(DeepAutoHashMap(i32, i32));
-    try test_map(DeepRecursiveAutoHashMap(i32, i32));
+    const Test_Struct = struct {
+        a: i32 = 456,
+        b: u32 = 123,
+    };
 
-    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(i32, i32));
-    try test_map_unmanaged(DeepAutoHashMapUnmanaged(i32, i32));
-    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(i32, i32));
+    const Test_Union = union (enum) {
+        a: i32,
+        b: u32,
+    };
+
+    const Test_Enum = enum {
+        a,
+        b,
+        c,
+    };
+
+    try test_map(ShallowAutoHashMap(i32, i32), 0, 1);
+    try test_map(DeepAutoHashMap(i32, i32), 0, 1);
+    try test_map(DeepRecursiveAutoHashMap(i32, i32), 0, 1);
+    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(i32, i32), 0, 1);
+    try test_map_unmanaged(DeepAutoHashMapUnmanaged(i32, i32), 0, 1);
+    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(i32, i32), 0, 1);
+
+    try test_map(ShallowAutoHashMap(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+    try test_map(DeepAutoHashMap(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+    try test_map(DeepRecursiveAutoHashMap(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+    try test_map_unmanaged(DeepAutoHashMapUnmanaged(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(Test_Struct, Test_Union), Test_Struct{}, Test_Union{ .a = 1 });
+
+    try test_map(ShallowAutoHashMap(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+    try test_map(DeepAutoHashMap(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+    try test_map(DeepRecursiveAutoHashMap(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+    try test_map_unmanaged(DeepAutoHashMapUnmanaged(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(Test_Union, Test_Enum), Test_Union{ .a = 1 }, Test_Enum.c);
+
+    try test_map(ShallowAutoHashMap(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+    try test_map(DeepAutoHashMap(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+    try test_map(DeepRecursiveAutoHashMap(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+    try test_map_unmanaged(ShallowAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+    try test_map_unmanaged(DeepAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+    try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
+
 }
 
-fn test_map(comptime T: type) !void {
+fn test_map(comptime T: type, comptime k: anytype, comptime v: anytype) !void {
     var map = T.init(std.testing.allocator);
     defer map.deinit();
 
-    try map.put(0, 1);
-    try std.testing.expectEqual(1, map.get(0));
+    try map.put(k, v);
+    try std.testing.expectEqual(v, map.get(k));
 }
 
-fn test_map_unmanaged(comptime T: type) !void {
-    var map: T = .{};
+fn test_map_unmanaged(comptime T: type, comptime k: anytype, comptime v: anytype) !void {
+    var map: T = .empty;
     defer map.deinit(std.testing.allocator);
 
-    try map.put(std.testing.allocator, 0, 1);
-    try std.testing.expectEqual(1, map.get(0));
+    try map.put(std.testing.allocator, k, v);
+    try std.testing.expectEqual(v, map.get(k));
 }
