@@ -149,7 +149,7 @@ test {
         b: u32 = 123,
     };
 
-    const Test_Union = union (enum) {
+    const Test_Union = union(enum) {
         a: i32,
         b: u32,
     };
@@ -187,7 +187,6 @@ test {
     try test_map_unmanaged(ShallowAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
     try test_map_unmanaged(DeepAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
     try test_map_unmanaged(DeepRecursiveAutoHashMapUnmanaged(Test_Enum, Test_Struct), Test_Enum.b, Test_Struct{});
-
 }
 
 fn test_map(comptime T: type, comptime k: anytype, comptime v: anytype) !void {
